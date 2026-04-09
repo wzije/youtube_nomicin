@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_nomicin/providers/config_provider.dart';
 import 'package:youtube_nomicin/js/script.dart';
-import 'dart:io';
 
 import 'package:youtube_nomicin/screens/setting_screen.dart';
 
@@ -253,7 +252,15 @@ class _HomeScreen extends State<HomeScreen> {
                   alignment: AlignmentGeometry.topCenter,
                   child: GestureDetector(
                     onLongPress: _showPasswordDialog,
-                    child: Container(color: Colors.red, width: 70, height: 20),
+                    child: Container(
+                      color: Colors.transparent,
+                      width: 70,
+                      height: 20,
+                      // child: Text(
+                      //   "!MC",
+                      //   style: TextStyle(fontWeight: FontWeight.bold),
+                      // ),
+                    ),
                   ),
                 ),
               ],
@@ -290,8 +297,9 @@ class _HomeScreen extends State<HomeScreen> {
                       errorText: errorMsg,
                     ),
                     onChanged: (val) {
-                      if (errorMsg != null)
+                      if (errorMsg != null) {
                         setDialogState(() => errorMsg = null);
+                      }
                     },
                   ),
                 ],
@@ -312,6 +320,7 @@ class _HomeScreen extends State<HomeScreen> {
                     final correctPassword = context
                         .read<ConfigProvider>()
                         .password;
+
                     if (passCtrl.text == correctPassword) {
                       Navigator.of(context).pop(); // Tutup dialog
                       Navigator.push(
