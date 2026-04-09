@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
-import 'package:youtube_nomicin/providers/config_provider.dart';
+import 'package:tebless/providers/config_provider.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -14,15 +15,23 @@ class _SettingScreenState extends State<SettingScreen> {
   final TextEditingController blockCtrl = TextEditingController();
 
   Map<String, dynamic>? config;
-  Map<String, dynamic>? appInfo;
+  PackageInfo? _info;
 
   @override
   void initState() {
     super.initState();
+    _loadVersion();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<ConfigProvider>();
       passCtrl.text = provider.password;
       blockCtrl.text = provider.blockedKeywords.join(',');
+    });
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      _info = info; // contoh: 1.0.0
     });
   }
 
@@ -133,7 +142,7 @@ class _SettingScreenState extends State<SettingScreen> {
 
             // App Info Footer
             Text(
-              "App (${appInfo?["version"] ?? "v1.0.0"}) by ${appInfo?["creator"] ?? "jehan"}",
+              "App version (v${_info?.version ?? ""}+${_info?.buildNumber ?? ""}) by wzije",
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],

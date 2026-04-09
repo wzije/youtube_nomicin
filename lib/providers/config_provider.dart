@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_nomicin/services/config_service.dart';
+import 'package:tebless/services/config_service.dart';
 
 class ConfigProvider extends ChangeNotifier {
   Map<String, dynamic> _config = {};

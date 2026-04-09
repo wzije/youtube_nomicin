@@ -1,4 +1,4 @@
-name: youtube_nomicin
+name: tebless
 description: "Safe whatching youtube for kids."
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
@@ -15,6 +15,7 @@ dependencies:
   path_provider: ^2.1.5
   provider: ^6.1.5+1
   flutter_launcher_icons: ^0.14.4
+  package_info_plus: ^9.0.1
 
 dev_dependencies:
   flutter_test:
@@ -44,18 +45,19 @@ flutter:
 
 flutter_native_splash:
   color: "#ffffff"
-  image: assets/images/ic_launcher.png
+  android_gravity: center
+  image: assets/images/splash_logo.png
   android: true
   ios: false
 
   android_12:
-    image: assets/images/ic_launcher.png
+    image: assets/images/splash_logo.png
     icon_background_color: "#ffffff"
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/ic_launcher.png"
+  image_path: "assets/images/logo.png"
   # Tambahkan ini untuk Android 12+ (Adaptive Icon)
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/ic_launcher.png"
+  adaptive_icon_foreground: "assets/images/logo.png"

@@ -1,4 +1,4 @@
-final String YoutubeTVModeScript = """
+final String TVModeScript = """
 (function () {
 
   // 🔹 Force redirect ke homepage

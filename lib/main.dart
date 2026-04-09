@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:youtube_nomicin/providers/config_provider.dart';
-import 'package:youtube_nomicin/screens/home_screen.dart';
-import 'package:youtube_nomicin/screens/splash_screen.dart';
+import 'package:tebless/providers/config_provider.dart';
+import 'package:tebless/screens/home_screen.dart';
+import 'package:tebless/screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

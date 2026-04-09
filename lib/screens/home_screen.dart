@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:tebless/js/script.dart';
+import 'package:tebless/providers/config_provider.dart';
+import 'package:tebless/screens/setting_screen.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:youtube_nomicin/providers/config_provider.dart';
-import 'package:youtube_nomicin/js/script.dart';
-
-import 'package:youtube_nomicin/screens/setting_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -119,7 +118,7 @@ class _HomeScreen extends State<HomeScreen> {
               document.getElementsByTagName('head')[0].appendChild(meta);
             """);
 
-            _webViewController.runJavaScript(YoutubeTVModeScript);
+            _webViewController.runJavaScript(TVModeScript);
             if (history.isEmpty || history.last != url) {
               history.add(url);
             }

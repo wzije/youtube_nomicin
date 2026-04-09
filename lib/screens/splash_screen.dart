@@ -19,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen>
     AnimatedOpacity(
       opacity: 1,
       duration: Duration(milliseconds: 200),
-      child: Image.asset('assets/image/splash_logo.png'),
+      child: Image.asset('assets/image/logo.png'),
     );
 
     LinearProgressIndicator(
@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen>
           /// splash_logo TENGAH
           Center(
             child: Image.asset(
-              'assets/images/splash_logo.png', // pake splash_logo !Micin kamu
+              'assets/images/logo.png', // pake splash_logo !Micin kamu
               width: 180,
             ),
           ),
