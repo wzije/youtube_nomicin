@@ -1,0 +1,12 @@
+{
+    "password": "4321",
+    "blocked_keywords": [
+        "roblox",
+        "minecraft",
+        "game"
+    ],
+    "app_info": {
+        "version": "v1.0.1",
+        "creator": "jee"
+    }
+}
