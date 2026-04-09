@@ -1,6 +1,4 @@
-## Here is a professional and comprehensive README.md file for your project in English.
-
-## 📺 YOUTUBE NOMICIN
+# YOUTUBE Nomicin App
 
 YOUTUBE NOMICIN is a Flutter-based WebView application designed to provide a cleaner, more focused, and distraction-free YouTube viewing experience.
 The name "NOMICIN" (No MSG) is a local Indonesian metaphor for "No additives"—this app removes the "addictive additives" of YouTube that lead to mindless infinite scrolling.
