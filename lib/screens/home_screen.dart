@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_nomicin/providers/config_provider.dart';
-import 'package:youtube_nomicin/config/jsscript.dart';
+import 'package:youtube_nomicin/js/script.dart';
 import 'dart:io';
 
 import 'package:youtube_nomicin/screens/setting_screen.dart';
@@ -33,13 +33,13 @@ class _HomeScreen extends State<HomeScreen> {
   final List<LogicalKeyboardKey> _keyBuffer = [];
 
   String getUserAgent() {
-    if (Platform.isAndroid) {
-      return "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36";
-    } else if (Platform.isIOS) {
-      return "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148";
-    } else {
-      return "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36";
-    }
+    // if (Platform.isAndroid) {
+    //   return "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36";
+    // } else if (Platform.isIOS) {
+    //   return "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148";
+    // } else {
+    return "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36";
+    // }
   }
 
   @override
@@ -59,65 +59,88 @@ class _HomeScreen extends State<HomeScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: (request) {
-            final url = request.url;
-
+            final url = request.url.toLowerCase();
+            // Ambil keywords terbaru
             final latestKeywords = context
                 .read<ConfigProvider>()
                 .blockedKeywords;
 
-            // BLOCK SHORTS TOTAL
-            if (url.contains("/shorts/")) {
+            if (url.contains("/shorts/") || url.contains("reel")) {
               return NavigationDecision.prevent;
             }
 
-            // OPTIONAL: block reel / weird endpoints
-            if (url.contains("reel")) {
-              return NavigationDecision.prevent;
-            }
-
-            // block keyword di URL (search, watch, dll)
             for (var keyword in latestKeywords) {
-              if (url.contains(keyword)) {
+              if (keyword.isNotEmpty && url.contains(keyword.toLowerCase())) {
                 return NavigationDecision.prevent;
               }
             }
 
-            return NavigationDecision.navigate;
+            if (url.contains("/watch?v=")) {
+              final uri = Uri.parse(url);
+              final videoId = uri.queryParameters['v'];
+
+              if (videoId != null) {
+                _webViewController.loadRequest(
+                  Uri.parse(
+                    "https://www.youtube.com/embed/$videoId?autoplay=1&mute=1&modestbranding=1&rel=0",
+                  ),
+                  headers: {
+                    'Referer': 'https://www.youtube.com/',
+                    'Origin': 'https://www.youtube.com',
+                  },
+                );
+              }
+            }
+
+            return NavigationDecision.prevent;
           },
-
           onUrlChange: (change) {
-            final url = change.url ?? "";
-
+            final url = change.url?.toLowerCase() ?? "";
             final latestKeywords = context
                 .read<ConfigProvider>()
                 .blockedKeywords;
 
             if (url.contains("/shorts/")) {
-              _webViewController.loadRequest(Uri.parse("https://youtube.com"));
+              _loadYoutubeHome(); // Gunakan fungsi helper agar konsisten
+              return;
             }
 
-            // block keyword
             for (var keyword in latestKeywords) {
-              if (url.contains(keyword)) {
-                _webViewController.loadRequest(
-                  Uri.parse("https://youtube.com"),
-                );
+              if (keyword.isNotEmpty && url.contains(keyword.toLowerCase())) {
+                _loadYoutubeHome();
                 return;
               }
             }
           },
-
           onPageFinished: (url) {
-            // inject script kamu
+            _webViewController.runJavaScript("""
+              var meta = document.createElement('meta');
+              meta.name = "referrer";
+              meta.content = "strict-origin-when-cross-origin";
+              document.getElementsByTagName('head')[0].appendChild(meta);
+            """);
+
             _webViewController.runJavaScript(YoutubeTVModeScript);
-            // simpan history
             if (history.isEmpty || history.last != url) {
               history.add(url);
             }
           },
         ),
-      )
-      ..loadRequest(Uri.parse("https://youtube.com"));
+      );
+
+    // FIX ERROR 153: Tambahkan Header Referer saat load request
+    _loadYoutubeHome();
+  }
+
+  // Fungsi Helper untuk memuat YouTube dengan Header Referer yang benar
+  void _loadYoutubeHome() {
+    _webViewController.loadRequest(
+      Uri.parse("https://www.youtube.com"),
+      headers: {
+        'Referer': 'https://youtube.com', // Ini kunci mengatasi error 153
+        'Origin': 'https://www.youtube.com',
+      },
+    );
   }
 
   // Fungsi untuk mengecek URL aktif jika keyword berubah di background
@@ -159,7 +182,7 @@ class _HomeScreen extends State<HomeScreen> {
     }
     if (match && _keyBuffer.length == _tvKeySequence.length) {
       _keyBuffer.clear();
-      PasswordDialog();
+      _showPasswordDialog();
     }
   }
 
@@ -223,16 +246,14 @@ class _HomeScreen extends State<HomeScreen> {
           body: SafeArea(
             child: Stack(
               children: [
-                WebViewWidget(controller: _webViewController),
+                Positioned.fill(
+                  child: WebViewWidget(controller: _webViewController),
+                ),
                 Align(
                   alignment: AlignmentGeometry.topCenter,
                   child: GestureDetector(
-                    onLongPress: PasswordDialog.new,
-                    child: Container(
-                      color: Colors.transparent,
-                      width: 70,
-                      height: 20,
-                    ),
+                    onLongPress: _showPasswordDialog,
+                    child: Container(color: Colors.red, width: 70, height: 20),
                   ),
                 ),
               ],
@@ -242,72 +263,79 @@ class _HomeScreen extends State<HomeScreen> {
       ),
     );
   }
-}
 
-class PasswordDialog extends StatefulWidget {
-  const PasswordDialog({super.key});
+  void _showPasswordDialog() {
+    final TextEditingController passCtrl = TextEditingController();
+    String? errorMsg;
 
-  @override
-  State<PasswordDialog> createState() => _PasswordDialogState();
-}
-
-class _PasswordDialogState extends State<PasswordDialog> {
-  final TextEditingController passCtrl = TextEditingController();
-  String? errorMsg;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      title: Text("Go To Setting"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: passCtrl,
-            obscureText: true,
-            decoration: InputDecoration(
-              icon: Icon(Icons.lock),
-              hintText: "Enter Password",
-              errorText: errorMsg,
-            ),
-            onChanged: (val) {
-              if (errorMsg != null) setState(() => errorMsg = null);
-            },
-          ),
-        ],
-      ),
-      actions: [
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue, // Warna background
-            foregroundColor: Colors.white, // Warna teks
-            minimumSize: const Size(100, 45), // Lebar 100, Tinggi 45
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            elevation: 0, // Datar, atau kasih angka jika mau ada bayangan
-          ),
-          onPressed: () {
-            final correctPassword = context.read<ConfigProvider>().password;
-            if (passCtrl.text == correctPassword) {
-              Navigator.of(context).pop(); // Tutup dialog
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingScreen()),
-              );
-            } else {
-              setState(() {
-                errorMsg = "Invalid Password";
-              });
-            }
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              title: Text("Go To Setting"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: passCtrl,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      icon: Icon(Icons.lock),
+                      hintText: "Enter Password",
+                      errorText: errorMsg,
+                    ),
+                    onChanged: (val) {
+                      if (errorMsg != null)
+                        setDialogState(() => errorMsg = null);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue, // Warna background
+                    foregroundColor: Colors.white, // Warna teks
+                    minimumSize: const Size(100, 45), // Lebar 100, Tinggi 45
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation:
+                        0, // Datar, atau kasih angka jika mau ada bayangan
+                  ),
+                  onPressed: () {
+                    final correctPassword = context
+                        .read<ConfigProvider>()
+                        .password;
+                    if (passCtrl.text == correctPassword) {
+                      Navigator.of(context).pop(); // Tutup dialog
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SettingScreen(),
+                        ),
+                      );
+                    } else {
+                      setDialogState(() {
+                        errorMsg = "Invalid Password";
+                      });
+                    }
+                  },
+                  child: const Text(
+                    "Enter",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            );
           },
-          child: const Text(
-            "Enter",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
